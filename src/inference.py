@@ -1,24 +1,28 @@
-# inference.py
-from transformers import MT5ForConditionalGeneration, MT5Tokenizer
-import torch
+import sys
+import os
+import joblib
 
-# Load model and tokenizer
-model_path = "../model_output"
-tokenizer = MT5Tokenizer.from_pretrained(model_path)
-model = MT5ForConditionalGeneration.from_pretrained(model_path)
+# Ensure we can import from src
+sys.path.append(os.path.dirname(__file__))
 
-# Function to formalize sentence
-def formalize(text):
-    input_text = "formalize: " + text
-    input_ids = tokenizer.encode(input_text, return_tensors="pt", truncation=True)
-    output = model.generate(input_ids, max_length=64)
-    formal_sentence = tokenizer.decode(output[0], skip_special_tokens=True)
-    return formal_sentence
+# Import the function from train_model.py
+from train_model import preprocess_sentence  
 
-# Try it out!
+# Load the saved model with joblib (not pickle)
+model = joblib.load("marathi_formalizer.pkl")
+
+print("✅ Model loaded successfully!")
+
+# Inference loop
 while True:
-    informal = input("\nEnter informal Marathi sentence: ")
-    if informal.lower() in ["exit", "quit"]:
+    sentence = input("\nEnter an informal Marathi sentence (or 'quit' to exit): ")
+    if sentence.lower() == "quit":
         break
-    formal = formalize(informal)
-    print("Formalized →", formal)
+
+    # Preprocess
+    processed = preprocess_sentence(sentence)
+
+    # Predict (sklearn-based model)
+    prediction = model.predict([processed])[0]
+
+    print("Formalized Sentence:", prediction)
