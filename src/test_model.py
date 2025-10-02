@@ -1,19 +1,29 @@
+# test_model.py
 import joblib
+import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+from train_model import preprocess_sentence
 
-# Load your trained pipeline (vectorizer + model)
-model = joblib.load("marathi_formalizer.pkl")
+# Load vectorizer + dataset
+vectorizer = joblib.load("vectorizer.pkl")
+df = pd.read_csv("processed_dataset.csv")
 
-print("Marathi Formalizer (type 'quit' to exit)\n")
+informal_sentences = df["input_processed"].tolist()
+formal_sentences = df["target_processed"].tolist()
+informal_vectors = vectorizer.transform(informal_sentences)
+
+print("Marathi Formalizer (Retrieval Based)")
+print("Type 'quit' to exit.\n")
 
 while True:
-    # Take user input
-    sentence = input("Enter an informal Marathi sentence (or 'quit' to exit): ")
-
-    if sentence.lower() in ["quit", "exit"]:
-        print("👋 Exiting...")
+    user_input = input("Enter an informal Marathi sentence (or 'quit' to exit): ")
+    if user_input.lower() in ["quit", "exit"]:
         break
 
-    # Predict formalized version
-    prediction = model.predict([sentence])[0]
+    processed = preprocess_sentence(user_input)
+    user_vec = vectorizer.transform([processed])
 
-    print("✅ Formalized Sentence:", prediction, "\n")
+    similarities = cosine_similarity(user_vec, informal_vectors)
+    best_idx = similarities.argmax()
+
+    print("✅ Formalized Sentence:", formal_sentences[best_idx], "\n")
